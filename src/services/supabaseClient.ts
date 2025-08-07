@@ -3,10 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+let supabaseClient;
+
 if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'your-supabase-url' || supabaseAnonKey === 'your-supabase-anon-key') {
   console.warn('Supabase environment variables not configured. Using mock mode.');
   // Create a mock client that won't make actual requests
-  export const supabase = {
+  supabaseClient = {
     auth: {
       signUp: () => Promise.resolve({ data: null, error: { message: 'Please configure Supabase environment variables' } }),
       signInWithPassword: () => Promise.resolve({ data: null, error: { message: 'Please configure Supabase environment variables' } }),
@@ -21,9 +23,10 @@ if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'your-supabase-url' || s
     })
   };
 } else {
-  export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 }
 
+export const supabase = supabaseClient;
 
 export type Profile = {
   id: string;
