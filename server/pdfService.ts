@@ -1,0 +1,455 @@
+import puppeteer from 'puppeteer';
+import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
+import path from 'path';
+
+export interface PDFData {
+  uniqueId: string;
+  userInfo: {
+    email: string;
+    name?: string;
+  };
+  assessmentResults: any;
+  educationForm?: any;
+  jobApplicationForm?: any;
+  generatedAt: Date;
+}
+
+export async function generateCareerAssessmentPDF(data: PDFData): Promise<Buffer> {
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
+  
+  try {
+    const page = await browser.newPage();
+    
+    const htmlContent = generatePDFTemplate(data);
+    
+    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: {
+        top: '20px',
+        right: '20px',
+        bottom: '20px',
+        left: '20px'
+      }
+    });
+    
+    return pdfBuffer;
+  } finally {
+    await browser.close();
+  }
+}
+
+function generatePDFTemplate(data: PDFData): string {
+  const { uniqueId, userInfo, assessmentResults, educationForm, jobApplicationForm, generatedAt } = data;
+  
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Career Assessment Report</title>
+      <style>
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        
+        body {
+          font-family: 'Arial', sans-serif;
+          line-height: 1.6;
+          color: #333;
+          background: #fff;
+        }
+        
+        .header {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 30px;
+          text-align: center;
+          margin-bottom: 30px;
+        }
+        
+        .logo {
+          width: 80px;
+          height: 80px;
+          background: white;
+          border-radius: 50%;
+          margin: 0 auto 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24px;
+          font-weight: bold;
+          color: #667eea;
+        }
+        
+        .header h1 {
+          font-size: 28px;
+          margin-bottom: 10px;
+        }
+        
+        .header p {
+          font-size: 16px;
+          opacity: 0.9;
+        }
+        
+        .container {
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 0 20px;
+        }
+        
+        .report-info {
+          background: #f8f9fa;
+          padding: 20px;
+          border-radius: 8px;
+          margin-bottom: 30px;
+          border-left: 4px solid #667eea;
+        }
+        
+        .report-info h2 {
+          color: #667eea;
+          margin-bottom: 15px;
+        }
+        
+        .info-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 15px;
+        }
+        
+        .info-item {
+          display: flex;
+          justify-content: space-between;
+        }
+        
+        .info-label {
+          font-weight: bold;
+          color: #666;
+        }
+        
+        .section {
+          margin-bottom: 30px;
+          background: white;
+          border-radius: 8px;
+          padding: 25px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .section h2 {
+          color: #667eea;
+          margin-bottom: 20px;
+          padding-bottom: 10px;
+          border-bottom: 2px solid #e9ecef;
+        }
+        
+        .career-paths {
+          display: grid;
+          gap: 20px;
+        }
+        
+        .career-path {
+          border: 1px solid #e9ecef;
+          border-radius: 8px;
+          padding: 20px;
+          background: #f8f9fa;
+        }
+        
+        .career-title {
+          font-size: 20px;
+          font-weight: bold;
+          color: #667eea;
+          margin-bottom: 10px;
+        }
+        
+        .match-score {
+          background: #28a745;
+          color: white;
+          padding: 5px 12px;
+          border-radius: 20px;
+          font-size: 14px;
+          font-weight: bold;
+          display: inline-block;
+          margin-bottom: 15px;
+        }
+        
+        .career-details {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 15px;
+          margin-top: 15px;
+        }
+        
+        .detail-item {
+          padding: 10px;
+          background: white;
+          border-radius: 6px;
+        }
+        
+        .detail-label {
+          font-weight: bold;
+          color: #666;
+          font-size: 14px;
+        }
+        
+        .detail-value {
+          margin-top: 5px;
+          color: #333;
+        }
+        
+        .skills-list {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-top: 10px;
+        }
+        
+        .skill-tag {
+          background: #667eea;
+          color: white;
+          padding: 4px 12px;
+          border-radius: 15px;
+          font-size: 12px;
+        }
+        
+        .personality-section {
+          background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+          color: white;
+          border-radius: 12px;
+        }
+        
+        .personality-type {
+          font-size: 24px;
+          font-weight: bold;
+          text-align: center;
+          margin-bottom: 15px;
+        }
+        
+        .form-section {
+          background: #e3f2fd;
+          border-left: 4px solid #2196f3;
+        }
+        
+        .form-data {
+          display: grid;
+          gap: 15px;
+        }
+        
+        .form-field {
+          display: flex;
+          justify-content: space-between;
+          padding: 10px 0;
+          border-bottom: 1px solid #ccc;
+        }
+        
+        .field-label {
+          font-weight: bold;
+          color: #555;
+        }
+        
+        .field-value {
+          color: #333;
+          text-align: right;
+          max-width: 60%;
+        }
+        
+        .footer {
+          text-align: center;
+          margin-top: 40px;
+          padding: 20px;
+          background: #f8f9fa;
+          border-radius: 8px;
+          color: #666;
+        }
+        
+        .page-break {
+          page-break-before: always;
+        }
+        
+        @media print {
+          .section {
+            box-shadow: none;
+            border: 1px solid #ddd;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="logo">CP</div>
+        <h1>CareerPath AI</h1>
+        <p>Technology Career Assessment Report</p>
+      </div>
+      
+      <div class="container">
+        <div class="report-info">
+          <h2>Report Information</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Report ID:</span>
+              <span>${uniqueId}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Generated:</span>
+              <span>${generatedAt.toLocaleDateString()}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">User:</span>
+              <span>${userInfo.email}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Assessment Type:</span>
+              <span>Technology Career Assessment</span>
+            </div>
+          </div>
+        </div>
+        
+        ${assessmentResults?.personalityType ? `
+        <div class="section personality-section">
+          <h2>Personality Profile</h2>
+          <div class="personality-type">${assessmentResults.personalityType}</div>
+          <p>${assessmentResults.personalityDescription}</p>
+          
+          <div style="margin-top: 20px;">
+            <h3>Key Strengths:</h3>
+            <ul style="margin-top: 10px;">
+              ${assessmentResults.strengths?.map((strength: string) => `<li>${strength}</li>`).join('') || ''}
+            </ul>
+          </div>
+        </div>
+        ` : ''}
+        
+        ${assessmentResults?.careerPaths ? `
+        <div class="section">
+          <h2>Recommended Technology Career Paths</h2>
+          <div class="career-paths">
+            ${assessmentResults.careerPaths.map((career: any) => `
+              <div class="career-path">
+                <div class="career-title">${career.title}</div>
+                <div class="match-score">${career.match}% Match</div>
+                <p>${career.description}</p>
+                
+                <div class="career-details">
+                  <div class="detail-item">
+                    <div class="detail-label">Salary Range</div>
+                    <div class="detail-value">${career.salary}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Education</div>
+                    <div class="detail-value">${career.education}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Growth</div>
+                    <div class="detail-value">${career.growth}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Key Skills</div>
+                    <div class="skills-list">
+                      ${career.skills?.map((skill: string) => `<span class="skill-tag">${skill}</span>`).join('') || ''}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        ` : ''}
+        
+        ${educationForm ? `
+        <div class="section form-section page-break">
+          <h2>Education Background</h2>
+          <div class="form-data">
+            ${educationForm.degree ? `
+            <div class="form-field">
+              <span class="field-label">Degree:</span>
+              <span class="field-value">${educationForm.degree}</span>
+            </div>
+            ` : ''}
+            ${educationForm.major ? `
+            <div class="form-field">
+              <span class="field-label">Major:</span>
+              <span class="field-value">${educationForm.major}</span>
+            </div>
+            ` : ''}
+            ${educationForm.university ? `
+            <div class="form-field">
+              <span class="field-label">University:</span>
+              <span class="field-value">${educationForm.university}</span>
+            </div>
+            ` : ''}
+            ${educationForm.graduationYear ? `
+            <div class="form-field">
+              <span class="field-label">Graduation Year:</span>
+              <span class="field-value">${educationForm.graduationYear}</span>
+            </div>
+            ` : ''}
+            ${educationForm.gpa ? `
+            <div class="form-field">
+              <span class="field-label">GPA:</span>
+              <span class="field-value">${educationForm.gpa}</span>
+            </div>
+            ` : ''}
+          </div>
+        </div>
+        ` : ''}
+        
+        ${jobApplicationForm ? `
+        <div class="section form-section">
+          <h2>Job Application Information</h2>
+          <div class="form-data">
+            ${jobApplicationForm.fullName ? `
+            <div class="form-field">
+              <span class="field-label">Full Name:</span>
+              <span class="field-value">${jobApplicationForm.fullName}</span>
+            </div>
+            ` : ''}
+            ${jobApplicationForm.position ? `
+            <div class="form-field">
+              <span class="field-label">Position Applied:</span>
+              <span class="field-value">${jobApplicationForm.position}</span>
+            </div>
+            ` : ''}
+            ${jobApplicationForm.experience ? `
+            <div class="form-field">
+              <span class="field-label">Experience:</span>
+              <span class="field-value">${jobApplicationForm.experience}</span>
+            </div>
+            ` : ''}
+            ${jobApplicationForm.skills ? `
+            <div class="form-field">
+              <span class="field-label">Skills:</span>
+              <span class="field-value">${jobApplicationForm.skills}</span>
+            </div>
+            ` : ''}
+            ${jobApplicationForm.phone ? `
+            <div class="form-field">
+              <span class="field-label">Phone:</span>
+              <span class="field-value">${jobApplicationForm.phone}</span>
+            </div>
+            ` : ''}
+          </div>
+        </div>
+        ` : ''}
+        
+        <div class="footer">
+          <p><strong>CareerPath AI</strong> - Technology Career Assessment Platform</p>
+          <p>Report ID: ${uniqueId} | Generated on ${generatedAt.toLocaleDateString()}</p>
+          <p>This report is confidential and intended solely for career guidance purposes.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+export function generateUniqueId(): string {
+  return uuidv4();
+}

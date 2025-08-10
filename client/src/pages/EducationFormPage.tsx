@@ -2,37 +2,49 @@ import { useState } from 'react';
 import { Link } from 'wouter';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowLeft, Save, GraduationCap, User, Phone, CreditCard, MapPin, Calendar } from 'lucide-react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { submitEducationForm, getEducationForm } from '../services/apiClient';
 
 const EducationFormPage = () => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    // Personal Information
-    fullName: '',
-    phoneNumber: '',
-    idCardNumber: '',
-    dateOfBirth: '',
-    address: '',
-    city: '',
-    zipCode: '',
-    
-    // Educational Information
-    highSchool: '',
-    highSchoolGradYear: '',
-    college: '',
     degree: '',
     major: '',
-    collegeGradYear: '',
+    university: '',
+    graduationYear: '',
     gpa: '',
-    
-    // Additional Education
-    certifications: '',
-    onlineCourses: '',
-    skills: '',
-    languages: ''
+    additionalInfo: ''
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
+  // Load existing form data
+  const { data: existingForm } = useQuery({
+    queryKey: ['/api/forms/education'],
+    queryFn: getEducationForm,
+    enabled: !!user,
+    onSuccess: (data) => {
+      if (data.degree) {
+        setFormData({
+          degree: data.degree || '',
+          major: data.major || '',
+          university: data.university || '',
+          graduationYear: data.graduationYear || '',
+          gpa: data.gpa || '',
+          additionalInfo: data.additionalInfo || ''
+        });
+      }
+    }
+  });
+
+  const submitMutation = useMutation({
+    mutationFn: submitEducationForm,
+    onSuccess: () => {
+      alert('Education form submitted successfully!');
+    },
+    onError: (error) => {
+      console.error('Error submitting education form:', error);
+      alert('Failed to submit education form. Please try again.');
+    },
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -44,19 +56,7 @@ const EducationFormPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    
-    try {
-      // Here you would normally submit to your API
-      // For now, just simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setSuccess(true);
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      alert('Error submitting form. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    submitMutation.mutate(formData);
   };
 
   if (success) {

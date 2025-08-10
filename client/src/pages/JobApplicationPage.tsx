@@ -2,39 +2,49 @@ import { useState } from 'react';
 import { Link } from 'wouter';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowLeft, Save, Briefcase, Upload, Building, MapPin, DollarSign } from 'lucide-react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { submitJobApplicationForm, getJobApplicationForm } from '../services/apiClient';
 
 const JobApplicationPage = () => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    // Resume Details
-    professionalSummary: '',
-    workExperience: '',
-    achievements: '',
-    projects: '',
-    
-    // Job Preferences
-    desiredJobTitle: '',
-    preferredIndustries: '',
-    salaryExpectation: '',
-    workLocation: '',
-    workType: '', // Remote, On-site, Hybrid
-    
-    // Company Preferences
-    companiesOfInterest: '',
-    companySize: '', // Startup, Small, Medium, Large, Enterprise
-    companyType: '', // Tech, Finance, Healthcare, etc.
-    
-    // Additional Information
-    portfolioUrl: '',
-    linkedinUrl: '',
-    githubUrl: '',
-    coverLetter: '',
-    availability: '',
-    relocateWillingness: ''
+    fullName: '',
+    position: '',
+    experience: '',
+    skills: '',
+    phone: '',
+    additionalInfo: ''
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
+  // Load existing form data
+  const { data: existingForm } = useQuery({
+    queryKey: ['/api/forms/job-application'],
+    queryFn: getJobApplicationForm,
+    enabled: !!user,
+    onSuccess: (data) => {
+      if (data.fullName) {
+        setFormData({
+          fullName: data.fullName || '',
+          position: data.position || '',
+          experience: data.experience || '',
+          skills: data.skills || '',
+          phone: data.phone || '',
+          additionalInfo: data.additionalInfo || ''
+        });
+      }
+    }
+  });
+
+  const submitMutation = useMutation({
+    mutationFn: submitJobApplicationForm,
+    onSuccess: () => {
+      alert('Job application submitted successfully!');
+    },
+    onError: (error) => {
+      console.error('Error submitting job application:', error);
+      alert('Failed to submit job application. Please try again.');
+    },
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -46,19 +56,7 @@ const JobApplicationPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    
-    try {
-      // Here you would normally submit to your API
-      // For now, just simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setSuccess(true);
-    } catch (error) {
-      console.error('Error submitting application:', error);
-      alert('Error submitting application. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    submitMutation.mutate(formData);
   };
 
   if (success) {

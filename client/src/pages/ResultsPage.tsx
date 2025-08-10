@@ -3,8 +3,8 @@ import { Link } from 'wouter';
 import { ArrowRight, Download, Share2, RefreshCw, Star, ChevronDown, ChevronUp, PieChart, Briefcase, User, FileText, MapPin, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import CareerRoadmap from '../components/CareerRoadmap';
-import { useQuery } from '@tanstack/react-query';
-import { getAssessmentResults } from '../services/apiClient';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { getAssessmentResults, generateAndDownloadPDF } from '../services/apiClient';
 
 interface CareerPath {
   title: string;
@@ -28,6 +28,26 @@ interface ResultData {
 const ResultsPage = () => {
   const { user } = useAuth();
   const [expandedPath, setExpandedPath] = useState<number | null>(null);
+
+  // PDF download mutation
+  const downloadPdfMutation = useMutation({
+    mutationFn: generateAndDownloadPDF,
+    onSuccess: (blob) => {
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `CareerAssessment_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    },
+    onError: (error) => {
+      console.error('PDF download error:', error);
+      alert('Failed to generate PDF. Please try again.');
+    },
+  });
 
   // Fetch AI-generated assessment results
   const { data: assessment, isLoading: loading, error } = useQuery({
@@ -267,9 +287,17 @@ const ResultsPage = () => {
             Retake Assessment
           </Link>
           
-          <button className="btn-secondary flex items-center">
-            <Download className="mr-2 h-5 w-5" />
-            Download Results
+          <button 
+            onClick={() => downloadPdfMutation.mutate()}
+            disabled={downloadPdfMutation.isPending}
+            className="btn-secondary flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {downloadPdfMutation.isPending ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+            ) : (
+              <Download className="mr-2 h-5 w-5" />
+            )}
+            {downloadPdfMutation.isPending ? 'Generating PDF...' : 'Download PDF Report'}
           </button>
           
           <button className="btn-outline flex items-center">

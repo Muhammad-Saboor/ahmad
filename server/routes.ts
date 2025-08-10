@@ -1,10 +1,16 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertAssessmentSchema } from "@shared/schema";
+import { 
+  insertUserSchema, insertAssessmentSchema, insertEducationFormSchema, 
+  insertJobApplicationSchema, insertPdfReportSchema 
+} from "@shared/schema";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { generateCareerQuestions, analyzeCareerFit, generatePersonalizedRoadmap } from './geminiService';
+import { generateCareerAssessmentPDF, generateUniqueId } from './pdfService';
+import fs from 'fs';
+import path from 'path';
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -216,6 +222,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error generating roadmap:', error);
       res.status(500).json({ error: 'Failed to generate roadmap' });
+    }
+  });
+
+  // Education form submission
+  app.post('/api/forms/education', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const formData = insertEducationFormSchema.parse({
+        userId: req.user!.id,
+        ...req.body
+      });
+      
+      const educationForm = await storage.createEducationForm(formData);
+      res.json(educationForm);
+    } catch (error) {
+      console.error('Education form submission error:', error);
+      res.status(400).json({ error: 'Failed to submit education form' });
+    }
+  });
+
+  // Job application form submission
+  app.post('/api/forms/job-application', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const formData = insertJobApplicationSchema.parse({
+        userId: req.user!.id,
+        ...req.body
+      });
+      
+      const jobApplication = await storage.createJobApplication(formData);
+      res.json(jobApplication);
+    } catch (error) {
+      console.error('Job application submission error:', error);
+      res.status(400).json({ error: 'Failed to submit job application' });
+    }
+  });
+
+  // Get education form
+  app.get('/api/forms/education', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const educationForm = await storage.getEducationFormByUserId(req.user!.id);
+      res.json(educationForm || {});
+    } catch (error) {
+      console.error('Error fetching education form:', error);
+      res.status(500).json({ error: 'Failed to fetch education form' });
+    }
+  });
+
+  // Get job application
+  app.get('/api/forms/job-application', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const jobApplication = await storage.getJobApplicationByUserId(req.user!.id);
+      res.json(jobApplication || {});
+    } catch (error) {
+      console.error('Error fetching job application:', error);
+      res.status(500).json({ error: 'Failed to fetch job application' });
+    }
+  });
+
+  // Generate and download PDF report
+  app.post('/api/pdf/generate', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Get latest assessment
+      const assessments = await storage.getAssessmentsByUserId(userId);
+      const latestAssessment = assessments[0];
+      if (!latestAssessment || !latestAssessment.results) {
+        return res.status(404).json({ error: 'No assessment results found' });
+      }
+
+      // Get education and job application forms (optional)
+      const educationForm = await storage.getEducationFormByUserId(userId);
+      const jobApplication = await storage.getJobApplicationByUserId(userId);
+
+      // Generate unique ID for PDF
+      const uniqueId = generateUniqueId();
+      
+      // Prepare PDF data
+      const pdfData = {
+        uniqueId,
+        userInfo: {
+          email: user.email,
+          name: jobApplication?.fullName || user.email
+        },
+        assessmentResults: latestAssessment.results,
+        educationForm: educationForm || undefined,
+        jobApplicationForm: jobApplication || undefined,
+        generatedAt: new Date()
+      };
+
+      // Generate PDF buffer
+      const pdfBuffer = await generateCareerAssessmentPDF(pdfData);
+
+      // Save PDF report to database for admin access
+      const pdfReport = await storage.createPdfReport({
+        userId,
+        uniqueId,
+        assessmentId: latestAssessment.id,
+        educationFormId: educationForm?.id || null,
+        jobApplicationId: jobApplication?.id || null,
+        pdfData: pdfData,
+        filePath: null // We're returning the PDF directly, not saving to file
+      });
+
+      // Set response headers for PDF download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="CareerAssessment_${uniqueId}.pdf"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      res.status(500).json({ error: 'Failed to generate PDF report' });
+    }
+  });
+
+  // Get PDF reports for admin access
+  app.get('/api/admin/pdf-reports', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      // For admin access - you might want to add admin role check here
+      const reports = await storage.getPdfReportsByUserId(req.user!.id);
+      res.json(reports);
+    } catch (error) {
+      console.error('Error fetching PDF reports:', error);
+      res.status(500).json({ error: 'Failed to fetch PDF reports' });
+    }
+  });
+
+  // Get specific PDF report by unique ID
+  app.get('/api/pdf/:uniqueId', async (req: Request, res: Response) => {
+    try {
+      const { uniqueId } = req.params;
+      const report = await storage.getPdfReportByUniqueId(uniqueId);
+      
+      if (!report) {
+        return res.status(404).json({ error: 'PDF report not found' });
+      }
+
+      res.json(report);
+    } catch (error) {
+      console.error('Error fetching PDF report:', error);
+      res.status(500).json({ error: 'Failed to fetch PDF report' });
     }
   });
 

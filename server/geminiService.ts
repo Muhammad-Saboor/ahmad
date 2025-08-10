@@ -33,30 +33,37 @@ export async function generateCareerQuestions(previousAnswers: any[] = []): Prom
       ? `Based on previous answers: ${JSON.stringify(previousAnswers.slice(-3))}, generate follow-up questions.`
       : 'Generate initial career assessment questions.';
 
-    const prompt = `You are a career counselor AI. Generate 5 comprehensive career assessment questions that help determine someone's ideal career path.
+    const prompt = `You are a career counselor AI specializing in Technology, Computer Science, IT, and Cybersecurity fields. Generate 5 comprehensive career assessment questions that help determine someone's ideal tech career path.
 
 ${context}
 
 Requirements:
-- Questions should cover different aspects: personality, interests, values, skills, work preferences
-- Mix of question types: multiple-choice, rating scales, and open-ended
-- Be specific and insightful
+- Focus ONLY on Technology stack careers: Software Engineering, Data Science, Cybersecurity, IT Infrastructure, Cloud Computing, DevOps, AI/ML, Web Development, Mobile Development, etc.
+- Questions should cover: technical interests, programming preferences, security mindset, problem-solving approach, work environment preferences
+- Mix of question types: multiple-choice (with 4-6 options), text input fields, and rating scales (1-5)
+- Be specific to tech industry and insightful for career matching
 - Avoid repetitive questions if previous answers are provided
 
 Return ONLY a valid JSON array with this exact structure:
 [
   {
     "id": 1,
-    "question": "What motivates you most in a work environment?",
+    "question": "Which programming paradigm interests you most?",
     "type": "multiple-choice",
-    "options": ["Solving complex problems", "Helping others", "Creating something new", "Leading teams"],
-    "category": "motivation"
+    "options": ["Object-Oriented Programming", "Functional Programming", "Data-Driven Development", "Systems Programming", "Web Development", "Mobile Development"],
+    "category": "technical_interests"
   },
   {
     "id": 2,
-    "question": "Rate your comfort level with public speaking (1-5 scale)",
+    "question": "Describe your experience with cybersecurity concepts and what aspects interest you most",
+    "type": "text",
+    "category": "cybersecurity"
+  },
+  {
+    "id": 3,
+    "question": "Rate your interest in working with large datasets and analytics (1-5 scale)",
     "type": "scale",
-    "category": "skills"
+    "category": "data_science"
   }
 ]`;
 
@@ -89,34 +96,34 @@ export async function analyzeCareerFit(responses: any[]): Promise<CareerAnalysis
 User Responses:
 ${JSON.stringify(responses, null, 2)}
 
-Based on these responses, provide a detailed career analysis. Return ONLY valid JSON with this exact structure:
+Based on these responses, provide a detailed technology career analysis focusing ONLY on CS, IT, and Cybersecurity fields. Return ONLY valid JSON with this exact structure:
 
 {
   "careerPaths": [
     {
       "title": "Software Engineer",
       "match": 95,
-      "description": "Design and develop software applications...",
-      "salary": "$75,000 - $150,000",
-      "education": "Bachelor's in Computer Science or equivalent",
+      "description": "Design and develop software applications using modern programming languages and frameworks...",
+      "salary": "$80,000 - $180,000",
+      "education": "Bachelor's in Computer Science, Software Engineering, or equivalent experience",
       "growth": "22% growth (much faster than average)",
-      "skills": ["Programming", "Problem solving", "Analytical thinking"]
+      "skills": ["Programming", "Software Architecture", "Problem Solving", "Version Control"]
     }
   ],
   "personalityType": "INTJ",
-  "personalityDescription": "Innovative and strategic thinker...",
-  "strengths": ["Analytical thinking", "Problem solving", "Attention to detail"],
-  "interests": ["Technology", "Innovation", "Problem solving"],
-  "values": ["Growth", "Challenge", "Impact"]
+  "personalityDescription": "Innovative and strategic tech-minded individual...",
+  "strengths": ["Technical problem solving", "Logical thinking", "Attention to detail"],
+  "interests": ["Software Development", "Technology Innovation", "System Design"],
+  "values": ["Continuous Learning", "Technical Excellence", "Innovation"]
 }
 
 Requirements:
-- Provide 3-5 career matches ranked by compatibility
+- Provide 3-5 technology career matches ONLY from: Software Engineering, Data Science, Cybersecurity, DevOps, Cloud Computing, AI/ML Engineering, Web Development, Mobile Development, IT Infrastructure, Network Security, etc.
 - Match percentages should be realistic (60-95%)
-- Include diverse career options that truly fit the responses
-- Personality type should be based on responses
-- All arrays should have 3-5 relevant items
-- Be specific and actionable in descriptions`;
+- Include diverse tech career options that truly fit the responses
+- Tech-focused personality assessment
+- All arrays should have 3-5 relevant tech-related items
+- Be specific to technology industry and actionable`;
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
