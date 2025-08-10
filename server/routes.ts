@@ -329,9 +329,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         filePath: null // We're returning the PDF directly, not saving to file
       });
 
-      // Set response headers for PDF download
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="CareerAssessment_${uniqueId}.pdf"`);
+      // Set response headers for text report download
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', `attachment; filename="CareerAssessment_${uniqueId}.txt"`);
       res.setHeader('Content-Length', pdfBuffer.length);
       
       res.send(pdfBuffer);
