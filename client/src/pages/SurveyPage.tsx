@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'wouter';
 import { ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { surveyQuestions } from '../data/surveyData';
@@ -17,7 +17,7 @@ const SurveyPage = () => {
   const [progress, setProgress] = useState(0);
   
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   
   const totalQuestions = surveyQuestions.length;
   
@@ -69,7 +69,9 @@ const SurveyPage = () => {
       const result = await submitSurveyResponses(responses, user!.id);
       
       // Navigate to results page with the data
-      navigate('/results', { state: { results: result } });
+      // Store results in sessionStorage for now
+      sessionStorage.setItem('assessmentResults', JSON.stringify(result));
+      setLocation('/results');
     } catch (error) {
       console.error('Error submitting survey:', error);
       alert('There was an error submitting your survey. Please try again.');

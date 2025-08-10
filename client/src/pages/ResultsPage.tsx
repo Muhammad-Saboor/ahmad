@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import { ArrowRight, Download, Share2, RefreshCw, Star, ChevronDown, ChevronUp, PieChart, Briefcase, GraduationCap } from 'lucide-react';
+import { Link } from 'wouter';
+import { ArrowRight, Download, Share2, RefreshCw, Star, ChevronDown, ChevronUp, PieChart, Briefcase, GraduationCap, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface CareerPath {
@@ -23,25 +23,30 @@ interface ResultData {
 }
 
 const ResultsPage = () => {
-  const location = useLocation();
   const { user } = useAuth();
   const [results, setResults] = useState<ResultData | null>(null);
   const [expandedPath, setExpandedPath] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    // In a real app, we would fetch results from the API if they're not in location state
-    if (location.state?.results) {
-      setResults(location.state.results);
-      setLoading(false);
-    } else {
-      // For demo purposes, let's load mock data
-      import('../data/mockResults').then(module => {
-        setResults(module.default);
+    // Check for results in sessionStorage first
+    const storedResults = sessionStorage.getItem('assessmentResults');
+    if (storedResults) {
+      try {
+        setResults(JSON.parse(storedResults));
         setLoading(false);
-      });
+        return;
+      } catch (error) {
+        console.error('Error parsing stored results:', error);
+      }
     }
-  }, [location]);
+    
+    // Fallback to mock data for demo
+    import('../data/mockResults').then(module => {
+      setResults(module.default);
+      setLoading(false);
+    });
+  }, []);
   
   const toggleExpandPath = (index: number) => {
     setExpandedPath(expandedPath === index ? null : index);

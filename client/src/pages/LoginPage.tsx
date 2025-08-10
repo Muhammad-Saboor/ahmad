@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'wouter';
 import { useAuth } from '../contexts/AuthContext';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
 
@@ -10,7 +10,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   
   const { signIn } = useAuth();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +30,7 @@ const LoginPage = () => {
         throw new Error(signInError.message);
       }
       
-      navigate('/survey');
+      setLocation('/survey');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign in');
     } finally {

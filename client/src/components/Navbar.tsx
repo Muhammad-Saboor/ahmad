@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'wouter';
 import { useAuth } from '../contexts/AuthContext';
 import { Menu, X, User, LogOut, Briefcase } from 'lucide-react';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
+    setLocation('/');
   };
 
   return (

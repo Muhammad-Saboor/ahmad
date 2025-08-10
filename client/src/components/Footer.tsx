@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'wouter';
 import { Briefcase, Twitter, Linkedin, Instagram } from 'lucide-react';
 
 const Footer = () => {

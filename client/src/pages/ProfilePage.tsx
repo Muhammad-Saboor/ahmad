@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'wouter';
 import { useAuth } from '../contexts/AuthContext';
 import { User, Mail, KeyRound, LogOut, Save, Trash2 } from 'lucide-react';
 
 const ProfilePage = () => {
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   
   const [email, setEmail] = useState(user?.email || '');
   const [password, setPassword] = useState('');
@@ -16,7 +16,7 @@ const ProfilePage = () => {
   
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
+    setLocation('/');
   };
   
   const handleSaveProfile = () => {
@@ -34,7 +34,7 @@ const ProfilePage = () => {
     // In a real app, we would delete the user's account here
     if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
       signOut();
-      navigate('/');
+      setLocation('/');
     }
   };
   

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Route, Router } from 'wouter';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
@@ -15,7 +15,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
   
   if (!user) {
-    return <Navigate to="/login" replace />;
+    // Redirect to login using Wouter
+    window.location.href = '/login';
+    return null;
   }
   
   return <>{children}</>;
@@ -27,35 +29,26 @@ function App() {
       <div className="flex flex-col min-h-screen bg-slate-50">
         <Navbar />
         <main className="flex-grow">
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route 
-              path="/survey" 
-              element={
-                <ProtectedRoute>
-                  <SurveyPage />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/results" 
-              element={
-                <ProtectedRoute>
-                  <ResultsPage />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/profile" 
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              } 
-            />
-          </Routes>
+          <Router>
+            <Route path="/" component={LandingPage} />
+            <Route path="/login" component={LoginPage} />
+            <Route path="/signup" component={SignupPage} />
+            <Route path="/survey">
+              <ProtectedRoute>
+                <SurveyPage />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/results">
+              <ProtectedRoute>
+                <ResultsPage />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/profile">
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            </Route>
+          </Router>
         </main>
         <Footer />
       </div>
