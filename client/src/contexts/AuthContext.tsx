@@ -44,6 +44,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       const response = await authApi.signUp(email, password);
+      
+      // Store the token
+      if (response.token) {
+        setAuthToken(response.token);
+      }
+      
       setUser(response.user);
       return { error: null };
     } catch (error) {
@@ -58,6 +64,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       const response = await authApi.signIn(email, password);
+      
+      // Store the token
+      if (response.token) {
+        setAuthToken(response.token);
+      }
+      
       setUser(response.user);
       return { error: null };
     } catch (error) {
@@ -74,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('SignOut error:', error);
     } finally {
+      setAuthToken(null);
       setUser(null);
     }
   };
