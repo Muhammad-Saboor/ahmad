@@ -1,25 +1,42 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, CheckCircle2, Loader } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { surveyQuestions } from '../data/surveyData';
-import { submitSurveyResponses } from '../services/geminiService';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { generateQuestions, submitSurvey } from '../services/apiClient';
 
 interface SurveyResponse {
   questionId: number;
+  question: string;
   answer: string | string[];
+}
+
+interface CareerQuestion {
+  id: number;
+  question: string;
+  type: 'multiple-choice' | 'scale' | 'text';
+  options?: string[];
+  category: string;
 }
 
 const SurveyPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [progress, setProgress] = useState(0);
   
   const { user } = useAuth();
   const [, setLocation] = useLocation();
-  
-  const totalQuestions = surveyQuestions.length;
+  const queryClient = useQueryClient();
+
+  // Fetch AI-generated questions
+  const { data: questionsData, isLoading: questionsLoading, error: questionsError } = useQuery({
+    queryKey: ['/api/survey/questions'],
+    queryFn: generateQuestions,
+    enabled: !!user,
+  });
+
+  const questions: CareerQuestion[] = questionsData?.questions || [];
+  const totalQuestions = questions.length;
   
   useEffect(() => {
     setProgress(((currentStep) / (totalQuestions)) * 100);
@@ -39,16 +56,16 @@ const SurveyPage = () => {
     }
   };
   
-  const handleResponseChange = (questionId: number, answer: string | string[]) => {
+  const handleResponseChange = (questionId: number, question: string, answer: string | string[]) => {
     setResponses(prev => {
       const existingResponseIndex = prev.findIndex(r => r.questionId === questionId);
       
       if (existingResponseIndex >= 0) {
         const newResponses = [...prev];
-        newResponses[existingResponseIndex] = { questionId, answer };
+        newResponses[existingResponseIndex] = { questionId, question, answer };
         return newResponses;
       } else {
-        return [...prev, { questionId, answer }];
+        return [...prev, { questionId, question, answer }];
       }
     });
   };

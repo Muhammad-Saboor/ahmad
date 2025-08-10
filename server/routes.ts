@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertUserSchema, insertAssessmentSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { generateCareerQuestions, analyzeCareerFit, generatePersonalizedRoadmap } from './geminiService';
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -153,53 +154,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         completedAt: new Date()
       });
 
-      // For now, use mock results (in real app, this would call AI service)
-      const mockResults = {
-        careerPaths: [
-          {
-            title: "Software Engineer",
-            description: "Design and develop software applications and systems",
-            match: 92,
-            salary: "$95,000 - $150,000",
-            growth: "22% (Much faster than average)",
-            education: "Bachelor's degree in Computer Science or related field",
-            skills: ["Programming", "Problem-solving", "Algorithm design", "Testing"]
-          },
-          {
-            title: "Data Scientist",
-            description: "Analyze complex data to help organizations make decisions",
-            match: 87,
-            salary: "$100,000 - $165,000",
-            growth: "35% (Much faster than average)",
-            education: "Bachelor's degree in Statistics, Math, or Computer Science",
-            skills: ["Statistics", "Machine Learning", "Python/R", "Data Visualization"]
-          },
-          {
-            title: "UX Designer",
-            description: "Design user interfaces and experiences for digital products",
-            match: 78,
-            salary: "$75,000 - $120,000",
-            growth: "13% (Faster than average)",
-            education: "Bachelor's degree in Design or related field",
-            skills: ["User Research", "Prototyping", "Visual Design", "Usability Testing"]
-          }
-        ],
-        strengths: ["Analytical thinking", "Problem-solving", "Attention to detail", "Communication"],
-        interests: ["Technology", "Innovation", "Learning", "Creating solutions"],
-        values: ["Growth", "Impact", "Collaboration", "Work-life balance"],
-        personalityType: "Analytical Innovator",
-        personalityDescription: "You combine strong analytical skills with creative problem-solving abilities. You enjoy tackling complex challenges and finding innovative solutions."
-      };
+      // Use AI to analyze career fit based on responses
+      const aiResults = await analyzeCareerFit(responses);
 
-      // Update assessment with results
+      // Update assessment with AI results
       const updatedAssessment = await storage.updateAssessment(assessment.id, { 
-        results: mockResults 
+        results: aiResults 
       });
       
-      res.json(mockResults);
+      res.json(aiResults);
     } catch (error) {
       console.error('Survey submission error:', error);
       res.status(400).json({ error: 'Failed to submit survey' });
+    }
+  });
+
+  // Generate AI-powered questions route
+  app.get('/api/survey/questions', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      // Get previous assessments for context-aware questions
+      const previousAssessment = await storage.getLatestAssessmentByUserId(req.user!.id);
+      const previousAnswers = previousAssessment?.responses || [];
+      
+      const questions = await generateCareerQuestions(previousAnswers);
+      res.json({ questions });
+    } catch (error) {
+      console.error('Error generating questions:', error);
+      res.status(500).json({ error: 'Failed to generate questions' });
+    }
+  });
+
+  // Get assessment results route
+  app.get('/api/assessment/results', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const assessment = await storage.getLatestAssessmentByUserId(req.user!.id);
+      
+      if (!assessment) {
+        return res.status(404).json({ error: 'No assessment found' });
+      }
+
+      res.json(assessment);
+    } catch (error) {
+      console.error('Error fetching assessment results:', error);
+      res.status(500).json({ error: 'Failed to fetch results' });
+    }
+  });
+
+  // Generate AI roadmap route
+  app.post('/api/roadmap/generate', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { careerTitle, userProfile } = req.body;
+      
+      if (!careerTitle) {
+        return res.status(400).json({ error: 'Career title is required' });
+      }
+
+      const roadmap = await generatePersonalizedRoadmap(careerTitle, userProfile || {});
+      res.json({ roadmap });
+    } catch (error) {
+      console.error('Error generating roadmap:', error);
+      res.status(500).json({ error: 'Failed to generate roadmap' });
     }
   });
 

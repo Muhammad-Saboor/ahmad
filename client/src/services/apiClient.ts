@@ -1,119 +1,99 @@
-// API client for the career assessment platform
-const API_BASE_URL = '/api';
+const API_BASE = '/api';
 
-// Types
 export interface User {
   id: number;
   email: string;
 }
 
-export interface AuthResponse {
-  user: User;
-  token: string;
-}
+// Get auth token from localStorage
+export const getAuthToken = () => {
+  return localStorage.getItem('token');
+};
 
-export interface Assessment {
-  id: number;
-  userId: number;
-  responses: any;
-  results: any;
-  completedAt: Date | null;
-  createdAt: Date;
-}
-
-// Authentication token management
-let authToken: string | null = localStorage.getItem('authToken');
-
+// Set auth token in localStorage
 export const setAuthToken = (token: string | null) => {
-  authToken = token;
   if (token) {
-    localStorage.setItem('authToken', token);
+    localStorage.setItem('token', token);
   } else {
-    localStorage.removeItem('authToken');
+    localStorage.removeItem('token');
   }
 };
 
-export const getAuthToken = () => authToken;
+// Create authenticated request headers
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` }),
+  };
+};
 
-// API request helper
+// Generic API request function
 async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  const url = `${API_BASE_URL}${endpoint}`;
-  
-  const config: RequestInit = {
+  const url = `${API_BASE}${endpoint}`;
+  const response = await fetch(url, {
+    ...options,
     headers: {
-      'Content-Type': 'application/json',
-      ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
+      ...getAuthHeaders(),
       ...options.headers,
     },
-    ...options,
-  };
+  });
 
-  if (config.body && typeof config.body === 'object' && !(config.body instanceof FormData)) {
-    config.body = JSON.stringify(config.body);
-  }
-
-  const response = await fetch(url, config);
-  
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.error || `Request failed with status ${response.status}`);
+    const error = await response.json().catch(() => ({ error: 'Network error' }));
+    throw new Error(error.error || `HTTP ${response.status}`);
   }
 
   return response.json();
 }
 
-// Auth API functions
+// Authentication API
 export const authApi = {
-  async signUp(email: string, password: string): Promise<AuthResponse> {
-    const response = await apiRequest('/auth/signup', {
+  async signUp(email: string, password: string) {
+    return apiRequest('/auth/signup', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    setAuthToken(response.token);
-    return response;
   },
 
-  async signIn(email: string, password: string): Promise<AuthResponse> {
-    const response = await apiRequest('/auth/signin', {
+  async signIn(email: string, password: string) {
+    return apiRequest('/auth/signin', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    setAuthToken(response.token);
-    return response;
   },
 
-  async signOut(): Promise<void> {
-    await apiRequest('/auth/signout', {
+  async signOut() {
+    return apiRequest('/auth/signout', {
       method: 'POST',
     });
-    setAuthToken(null);
   },
 };
 
-// Assessment API functions
-export const assessmentApi = {
-  async create(assessment: Partial<Assessment>): Promise<Assessment> {
-    return apiRequest('/assessments', {
-      method: 'POST',
-      body: JSON.stringify(assessment),
-    });
-  },
+// Generate AI-powered questions
+export async function generateQuestions() {
+  return apiRequest('/survey/questions');
+}
 
-  async getAll(): Promise<Assessment[]> {
-    return apiRequest('/assessments');
-  },
+// Submit survey responses and get AI analysis
+export async function submitSurvey(responses: any[]) {
+  return apiRequest('/survey/submit', {
+    method: 'POST',
+    body: JSON.stringify({ responses }),
+  });
+}
 
-  async update(id: number, updates: Partial<Assessment>): Promise<Assessment> {
-    return apiRequest(`/assessments/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(updates),
-    });
-  },
+// Get assessment results
+export async function getAssessmentResults() {
+  return apiRequest('/assessment/results');
+}
 
-  async submitSurvey(responses: any[]): Promise<any> {
-    return apiRequest('/survey/submit', {
-      method: 'POST',
-      body: JSON.stringify({ responses }),
-    });
-  },
-};
+// Generate AI roadmap
+export async function generateRoadmap(careerTitle: string, userProfile: any = {}) {
+  return apiRequest('/roadmap/generate', {
+    method: 'POST',
+    body: JSON.stringify({ careerTitle, userProfile }),
+  });
+}
+
+export default apiRequest;

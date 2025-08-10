@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'wouter';
-import { ArrowRight, Download, Share2, RefreshCw, Star, ChevronDown, ChevronUp, PieChart, Briefcase, User, FileText, MapPin } from 'lucide-react';
+import { ArrowRight, Download, Share2, RefreshCw, Star, ChevronDown, ChevronUp, PieChart, Briefcase, User, FileText, MapPin, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import CareerRoadmap from '../components/CareerRoadmap';
+import { useQuery } from '@tanstack/react-query';
+import { getAssessmentResults } from '../services/apiClient';
 
 interface CareerPath {
   title: string;
@@ -25,29 +27,16 @@ interface ResultData {
 
 const ResultsPage = () => {
   const { user } = useAuth();
-  const [results, setResults] = useState<ResultData | null>(null);
   const [expandedPath, setExpandedPath] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    // Check for results in sessionStorage first
-    const storedResults = sessionStorage.getItem('assessmentResults');
-    if (storedResults) {
-      try {
-        setResults(JSON.parse(storedResults));
-        setLoading(false);
-        return;
-      } catch (error) {
-        console.error('Error parsing stored results:', error);
-      }
-    }
-    
-    // Fallback to mock data for demo
-    import('../data/mockResults').then(module => {
-      setResults(module.default);
-      setLoading(false);
-    });
-  }, []);
+
+  // Fetch AI-generated assessment results
+  const { data: assessment, isLoading: loading, error } = useQuery({
+    queryKey: ['/api/assessment/results'],
+    queryFn: getAssessmentResults,
+    enabled: !!user,
+  });
+
+  const results = assessment?.results;
   
   const toggleExpandPath = (index: number) => {
     setExpandedPath(expandedPath === index ? null : index);
@@ -58,7 +47,25 @@ const ResultsPage = () => {
       <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-violet-700 mx-auto"></div>
-          <p className="mt-4 text-lg font-medium text-slate-700">Analyzing your results...</p>
+          <p className="mt-4 text-lg font-medium text-slate-700">Loading your AI-generated results...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
+        <div className="text-center max-w-md px-4">
+          <div className="text-red-500 mb-4">
+            <AlertCircle className="h-16 w-16 mx-auto" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Error Loading Results</h2>
+          <p className="text-slate-600 mb-6">Unable to load your assessment results. Please try taking the assessment again.</p>
+          <Link to="/survey" className="btn-primary">
+            Retake Assessment
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Link>
         </div>
       </div>
     );

@@ -12,6 +12,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   createAssessment(assessment: InsertAssessment): Promise<Assessment>;
   getAssessmentsByUserId(userId: number): Promise<Assessment[]>;
+  getLatestAssessmentByUserId(userId: number): Promise<Assessment | null>;
   updateAssessment(id: number, updates: Partial<Assessment>): Promise<Assessment | undefined>;
 }
 
@@ -48,6 +49,11 @@ export class DatabaseStorage implements IStorage {
 
   async getAssessmentsByUserId(userId: number): Promise<Assessment[]> {
     return await this.db.select().from(assessments).where(eq(assessments.userId, userId)).orderBy(desc(assessments.createdAt));
+  }
+
+  async getLatestAssessmentByUserId(userId: number): Promise<Assessment | null> {
+    const result = await this.db.select().from(assessments).where(eq(assessments.userId, userId)).orderBy(desc(assessments.createdAt)).limit(1);
+    return result[0] || null;
   }
 
   async updateAssessment(id: number, updates: Partial<Assessment>): Promise<Assessment | undefined> {
