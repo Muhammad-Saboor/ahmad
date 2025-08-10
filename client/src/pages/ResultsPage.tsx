@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'wouter';
-import { ArrowRight, Download, Share2, RefreshCw, Star, ChevronDown, ChevronUp, PieChart, Briefcase, GraduationCap, AlertCircle } from 'lucide-react';
+import { ArrowRight, Download, Share2, RefreshCw, Star, ChevronDown, ChevronUp, PieChart, Briefcase, User, FileText, MapPin } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import CareerRoadmap from '../components/CareerRoadmap';
 
 interface CareerPath {
   title: string;
@@ -143,29 +144,38 @@ const ResultsPage = () => {
                     <p className="text-slate-700 mb-4">{career.description}</p>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
-                        <div className="flex items-center mb-2">
-                          <PieChart className="h-5 w-5 text-violet-500 mr-2" />
-                          <h4 className="font-medium">Salary Range</h4>
+                      <Link to="/roadmap" className="block">
+                        <div className="bg-gradient-to-r from-violet-50 to-purple-50 hover:from-violet-100 hover:to-purple-100 p-4 rounded-lg shadow-sm transition-all cursor-pointer border border-violet-200">
+                          <div className="flex items-center mb-2">
+                            <MapPin className="h-5 w-5 text-violet-600 mr-2" />
+                            <h4 className="font-medium text-violet-700">Career Roadmap</h4>
+                          </div>
+                          <p className="text-violet-900 text-sm">View detailed steps to reach this career</p>
+                          <ArrowRight className="h-4 w-4 text-violet-600 mt-2" />
                         </div>
-                        <p className="text-slate-700">{career.salary}</p>
-                      </div>
+                      </Link>
                       
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
-                        <div className="flex items-center mb-2">
-                          <GraduationCap className="h-5 w-5 text-violet-500 mr-2" />
-                          <h4 className="font-medium">Education</h4>
+                      <Link to="/education-form" className="block">
+                        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 p-4 rounded-lg shadow-sm transition-all cursor-pointer border border-blue-200">
+                          <div className="flex items-center mb-2">
+                            <User className="h-5 w-5 text-blue-600 mr-2" />
+                            <h4 className="font-medium text-blue-700">Education Profile</h4>
+                          </div>
+                          <p className="text-blue-900 text-sm">Complete your educational details</p>
+                          <ArrowRight className="h-4 w-4 text-blue-600 mt-2" />
                         </div>
-                        <p className="text-slate-700">{career.education}</p>
-                      </div>
+                      </Link>
                       
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
-                        <div className="flex items-center mb-2">
-                          <Briefcase className="h-5 w-5 text-violet-500 mr-2" />
-                          <h4 className="font-medium">Job Growth</h4>
+                      <Link to="/job-application" className="block">
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 p-4 rounded-lg shadow-sm transition-all cursor-pointer border border-green-200">
+                          <div className="flex items-center mb-2">
+                            <FileText className="h-5 w-5 text-green-600 mr-2" />
+                            <h4 className="font-medium text-green-700">Job Application</h4>
+                          </div>
+                          <p className="text-green-900 text-sm">Build your job application profile</p>
+                          <ArrowRight className="h-4 w-4 text-green-600 mt-2" />
                         </div>
-                        <p className="text-slate-700">{career.growth}</p>
-                      </div>
+                      </Link>
                     </div>
                     
                     <div>

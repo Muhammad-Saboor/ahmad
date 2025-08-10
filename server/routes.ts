@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertUserSchema, insertAssessmentSchema } from "@shared/schema";
@@ -7,8 +7,13 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
+// Extend Request interface for authenticated requests
+interface AuthenticatedRequest extends Request {
+  user?: any;
+}
+
 // Authentication middleware
-function authenticateToken(req: any, res: any, next: any) {
+function authenticateToken(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -91,12 +96,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Assessment routes
-  app.post('/api/assessments', authenticateToken, async (req, res) => {
+  app.post('/api/assessments', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { responses, results, completedAt } = req.body;
       
       const assessment = await storage.createAssessment({
-        userId: req.user.id,
+        userId: req.user!.id,
         responses,
         results,
         completedAt: completedAt ? new Date(completedAt) : null
@@ -109,9 +114,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/assessments', authenticateToken, async (req, res) => {
+  app.get('/api/assessments', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const assessments = await storage.getAssessmentsByUserId(req.user.id);
+      const assessments = await storage.getAssessmentsByUserId(req.user!.id);
       res.json(assessments);
     } catch (error) {
       console.error('Get assessments error:', error);
@@ -137,13 +142,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Survey submission route (combines creating assessment and generating results)
-  app.post('/api/survey/submit', authenticateToken, async (req, res) => {
+  app.post('/api/survey/submit', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { responses } = req.body;
       
       // Create assessment with responses
       const assessment = await storage.createAssessment({
-        userId: req.user.id,
+        userId: req.user!.id,
         responses,
         completedAt: new Date()
       });

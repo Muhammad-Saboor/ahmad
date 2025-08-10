@@ -166,7 +166,7 @@ const ProfilePage = () => {
                         <p className="text-sm text-slate-500">Completed on {new Date().toLocaleDateString()}</p>
                       </div>
                       <button
-                        onClick={() => navigate('/results')}
+                        onClick={() => setLocation('/results')}
                         className="text-violet-700 hover:text-violet-500 font-medium"
                       >
                         View Results

@@ -96,8 +96,11 @@ export class MemStorage implements IStorage {
     const id = this.currentAssessmentId++;
     const now = new Date();
     const assessment: Assessment = { 
-      ...insertAssessment, 
       id,
+      userId: insertAssessment.userId,
+      responses: insertAssessment.responses || null,
+      results: insertAssessment.results || null,
+      completedAt: insertAssessment.completedAt || null,
       createdAt: now
     };
     this.assessments.set(id, assessment);

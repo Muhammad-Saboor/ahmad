@@ -7,6 +7,9 @@ import SignupPage from './pages/SignupPage';
 import SurveyPage from './pages/SurveyPage';
 import ResultsPage from './pages/ResultsPage';
 import ProfilePage from './pages/ProfilePage';
+import EducationFormPage from './pages/EducationFormPage';
+import JobApplicationPage from './pages/JobApplicationPage';
+import RoadmapPage from './pages/RoadmapPage';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
@@ -46,6 +49,21 @@ function App() {
             <Route path="/profile">
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/education-form">
+              <ProtectedRoute>
+                <EducationFormPage />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/job-application">
+              <ProtectedRoute>
+                <JobApplicationPage />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/roadmap">
+              <ProtectedRoute>
+                <RoadmapPage />
               </ProtectedRoute>
             </Route>
           </Router>
