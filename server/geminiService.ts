@@ -61,7 +61,7 @@ Return ONLY a valid JSON array with this exact structure:
 ]`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       config: {
         responseMimeType: "application/json",
       },
@@ -119,7 +119,7 @@ Requirements:
 - Be specific and actionable in descriptions`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       config: {
         responseMimeType: "application/json",
       },
@@ -165,7 +165,7 @@ Timeframes should be realistic
 Order steps logically from beginner to advanced`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       config: {
         responseMimeType: "application/json",
       },
@@ -177,7 +177,8 @@ Order steps logically from beginner to advanced`;
       throw new Error("Empty response from Gemini API");
     }
 
-    return JSON.parse(roadmapText);
+    const roadmap = JSON.parse(roadmapText);
+    return roadmap;
 
   } catch (error) {
     console.error('Error generating roadmap:', error);

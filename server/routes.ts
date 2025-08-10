@@ -173,7 +173,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/survey/questions', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       // Get previous assessments for context-aware questions
-      const previousAssessment = await storage.getLatestAssessmentByUserId(req.user!.id);
+      const assessments = await storage.getAssessmentsByUserId(req.user!.id);
+      const previousAssessment = assessments[0]; // First one is latest due to DESC order
       const previousAnswers = previousAssessment?.responses || [];
       
       const questions = await generateCareerQuestions(previousAnswers);
@@ -187,7 +188,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get assessment results route
   app.get('/api/assessment/results', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const assessment = await storage.getLatestAssessmentByUserId(req.user!.id);
+      const assessments = await storage.getAssessmentsByUserId(req.user!.id);
+      const assessment = assessments[0]; // First one is latest due to DESC order
       
       if (!assessment) {
         return res.status(404).json({ error: 'No assessment found' });
